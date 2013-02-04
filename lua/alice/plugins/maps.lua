@@ -42,13 +42,12 @@ end
 
 local function PreMapChange()
     Alice.SaveTable(Alice.maps,"maps")
-    --timer prevents the function from running before player is disconnected
+    --timer to prevent the function from running before the player is disconnected
     timer.Simple(5,function()
         --don't run if player was a bot or server is not empty
         if #player.GetHumans()==0 then
             --run anything that requires an empty server
             hook.Call("Alice_PreMapChange")
-            --Alice.Maintenance()
             --we need a bot to keep timers running
             if #player.GetBots()==0 then
                 game.ConsoleCommand("bot\n")
