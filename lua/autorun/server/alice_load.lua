@@ -1,4 +1,12 @@
+
 Alice={}
+
+if !file.Exists("Alice","DATA") then
+    file.CreateDir("Alice")
+end
+
+include('alice/sv_alice.lua')
+include("von.lua")
 
 Alice.errors={}
 
@@ -16,18 +24,22 @@ end
 
 Alice.plugins={}
 
-for k,v in pairs(file.Find("plugins/*.lua","LUA")) do
-	local plugin = CompileString(file.Read("plugins/"..v,"LUA"),v,false)
-
+for k,v in pairs(file.Find("alice/plugins/*.lua","LUA")) do
+	local plugin = CompileString(file.Read("alice/plugins/"..v,"LUA"),v,false)
 	if type(plugin)!="string" then
-		plugin()
-		table.insert(Alice.plugins,v)
-		print("[Alice] Loaded "..v)
+		--plugin()
+		Alice.plugins[v]=plugin
+		--print("[Alice] Loaded "..v)
 	else 
 		print("[Alice] Failed to load "..v)
 		print(plugin)
 		table.insert(Alice.errors,plugin)
 	end
+end
+
+for k,v in pairs(Alice.plugins) do
+	v()
+	print("[Alice] Loaded "..k)
 end
 
 function Alice.Say(text)
