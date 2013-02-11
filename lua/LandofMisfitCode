@@ -1,0 +1,64 @@
+--map downloads
+    --WIP
+--[[local aio=(require("hio")) and table.Copy(hIO) or nil
+
+function noIOforyou(args)
+    print("someone attempted to use hIO: "..unpack({args}))
+    debug.Trace()
+end
+
+if aio then
+    for k,v in pairs(hIO) do
+        hIO[k]=noIOforyou
+    end
+end]]
+
+--[[
+function Alice.GetMap(map)
+    local maplist={}
+    http.Fetch("http://direct.almost-there.org/servers/garrysmod/maps",function(content)
+        for found in content:gmatch("a href=\"(%S+%.bsp%.bz2)\"") do
+            table.insert(maplist,found)
+            --print(found)
+            if found:find(map) then
+                return found
+            end
+        end
+    end)
+end]]
+
+--not working
+    --I think google's search page is too long
+--[[local function BackgroundCheck(steam)
+    local bans=0
+    http.Fetch("http://www.google.com/search?q="..steam,function(content)
+        for ban in content:lower():gmatch("%sbans?%s") do
+            bans=bans+1
+        end
+    end)
+    return bans
+end]]
+
+--[[hook.Add("PlayerInitialSpawn","RunBackgroundCheck",function(ply)
+    print("[BGCheck] "..ply:Nick()..": "..BackgroundCheck(ply:SteamID()))
+end)]]
+
+
+local lastping=50
+
+timer.Create("Alice_CheckPing2",10,0,function()
+    --change this later to check for spike in ping
+    --if GetAveragePing()>400 then
+    --print(lastping.." "..GetAveragePing())
+    if (GetAveragePing()/4)>lastping then
+        --print("spam?")
+        local spammer=MostLikelySpammer()
+        if spammer and type(spammer)!="string" and spammer:IsPlayer() then
+            print(spammer:Nick().."("..(Alice.players[spammer:UniqueID()].ppm or 0).." ppm)".." might be spamming")
+            --[[spammer:Cleanup()
+            Alice.Say("Kicking "..spammer:Nick().." for spam.")
+            spammer:Kick("spam")]]
+        end
+    end
+    lastping=GetAveragePing()
+end)
