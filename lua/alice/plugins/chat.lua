@@ -107,7 +107,6 @@ local addr={
 {{"be my friend?"},{"sure","yes","ok","no"}},
 {{"can i have a gun"},{"no"}},
 {{"i fell"},{"get LifeAlert"}},
-{{"y u no real"},{"Y U TALK LIKE IDIOT?"}},
 {{"slut"},{"*yawn*"}},
 {{"wanna suck"},{"isn't that your job?","your dad would have to take it out of his mouth first"}},
 {{"hey baby"},{"Fuck off Bieber"}},
@@ -149,8 +148,6 @@ local questions={
     {{"is there a god"},{"no","I doubt it","you have an imaginary friend too? Mine is named Barry."}},
     {{"who is the server owner","who owns this server"},{"Kenny"}},
 }
-local idle={"hello?","why is everyone so quiet?"}
-local lonely={"I'm bored","Is anyone out there?","Why won't anyone talk to me?"}
 
 local used={}
 local spam={}
@@ -250,39 +247,4 @@ function Alice.ParseIRCChat(name,txt,irc)
 end
 
 -- WMod="http:\/\/www.wiremod.com/forum/installation-malfunctions-support/4-wiremod-svn-guide.html"
-
-  //////////////////////////
- /////////testing//////////
-//////////////////////////
---[[
-local halfhour=1800
-
-local LastMsg=SysTime()
-
-hook.Add("PlayerSay","LastMsg",function() LastMsg=SysTime() end)
-
-timer.Create("LastMsg",60,0,function()
-    if (SysTime()-LastMsg)>halfhour and #player.GetHumans()>0 then
-        Alice.Say(table.Random(idle))
-    end
-end)
-
-hook.Add("PlayerDisconnected","Alice_ServerEmpty",function()
-    if #player.GetHumans()==0 then
-        file.Write("Alice/lonely.txt",SysTime())
-    end
-end)
-
-hook.Add("PlayerInitialSpawn","Alice_ServerEmpty",function(ply)
-    if !ply:IsBot() then
-        file.Write("Alice/lonely.txt",SysTime())
-    end
-end)
-
-timer.Create("Alice_lonely",60,0,function()
-    if #player.GetHumans()==0 and file.Exists("Alice/lonely.txt") and SysTime()-file.Read("Alice/lonely.txt")>halfhour/2 then
-        Alice.Say(table.Random(lonely))
-        file.Write("Alice/lonely.txt",SysTime())
-    end
-end)]]
 

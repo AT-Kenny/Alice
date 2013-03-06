@@ -25,6 +25,8 @@ badgroups["103582791432270512"]="Gabbo's Public Build" --possibly hacked, advert
 badgroups["103582791429631186"]="JackAsses United"
 badgroups["103582791429991598"]="myg0t"
 badgroups["103582791430495525"]="myg0t_international"
+badgroups["103582791433982902"]="The Trolls & Bros"
+badgroups["103582791434023067"]="KEY GENERATOR FOOTBALL MANAGER 2013"
 
 local atgroup="103582791430342520"
 

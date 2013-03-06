@@ -3,6 +3,7 @@ Alice={}
 
 if !file.Exists("Alice","DATA") then
     file.CreateDir("Alice")
+    file.CreateDir("Alice/data")
 end
 
 include('alice/sv_alice.lua')
@@ -27,9 +28,7 @@ Alice.plugins={}
 for k,v in pairs(file.Find("alice/plugins/*.lua","LUA")) do
 	local plugin = CompileString(file.Read("alice/plugins/"..v,"LUA"),v,false)
 	if type(plugin)!="string" then
-		--plugin()
 		Alice.plugins[v]=plugin
-		--print("[Alice] Loaded "..v)
 	else 
 		print("[Alice] Failed to load "..v)
 		print(plugin)
@@ -50,7 +49,7 @@ end
 function Alice.Reply(text,func)
 	timer.Simple(math.random(1,3),function() 
 		Alice.Say(text)
-		if func then
+		if func and type(func)=="function" then
 			timer.Simple(math.random(1,3),func)
 		end
 	end)
@@ -74,3 +73,45 @@ function player.GetAdmins()
     end
     return admins
 end
+
+--players table
+	--use AlmostAdmin save system
+		--option to remove old players
+			--only remove if file contains no useful data
+
+if !file.Exists("Alice/players","DATA") then
+	file.CreateDir("Alice/players")
+end
+
+Alice.players={}
+
+local meta=FindMetaTable("Player")
+
+function meta:A_Save()
+	if !file.Exists("Alice/players/"..self:SteamID():gsub(":","_"),"DATA") then
+		file.CreateDir("Alice/players/"..self:SteamID():gsub(":","_"))
+	end
+    file.Write("Alice/players/"..self:SteamID():gsub(":","_").."/playerinfo.txt",von.serialize(Alice.players[self:UniqueID()]))
+end
+
+function meta:A_Load()
+	if file.Exists("Alice/players/"..self:SteamID():gsub(":","_"),"DATA") then
+    	Alice.players[self:UniqueID()]=von.deserialize(file.Read("Alice/players/"..self:SteamID():gsub(":","_").."/playerinfo.txt","DATA"))
+    else
+    	Alice.players[self:UniqueID()]={}
+    end
+end
+
+hook.Add("PlayerInitialSpawn","Alice_PlayerInfo",function(pl)
+	if pl:IsValid() and !pl:IsBot() then
+		pl:A_Load()
+	end
+end)
+
+hook.Add("PlayerDisconnected","Alice_SavePlayerInfo",function(pl)
+	if pl:IsValid() and !pl:IsBot() then
+		pl:A_Save()
+	end
+end)
+
+--find changes to tables and display somewhere

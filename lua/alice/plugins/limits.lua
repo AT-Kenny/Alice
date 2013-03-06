@@ -10,18 +10,34 @@ end)
 
 local meta=FindMetaTable("Player")
 
-timer.Simple(1,function()
-	function meta:CheckLimit( str )
-		print(str)
 
-	    if !Alice.limits[str] then Alice.limits[str]=cvars.Number( "sbox_max"..str, 0 ) end
-	    --local c = Alice.limits[str] and Alice.limits[str] or cvars.Number( "sbox_max"..str, 0 )
-	    local c = Alice.limits[str]
+function Alice.CheckLimit( pl,str )
 
-	    if ( c < 0 ) or player.GetAll()==1 then return true end
-	    if ( self:GetCount( str ) > c-1 ) then self:LimitHit( str ) return false end
+    if !Alice.limits[str] then
+        local limit=cvars.Number( "sbox_max"..str, 0 )
+        
+        print("setting "..str.." limit to "..limit)
+        Alice.limits[str]=limit
+    end
+    
+    local c = Alice.limits[str]
 
-	    return true
+    if ( c < 0 ) or player.GetAll()==1 then return true end
+    if ( pl:GetCount( str ) > c-1 ) then pl:LimitHit( str ) return false end
 
-	end
+    return true
+
+end
+
+
+--borrowed from evolve
+
+timer.Simple( 1, function()
+    function GAMEMODE:PlayerSpawnProp( ply, mdl ) return Alice.CheckLimit( ply, "props" ) end
+    function GAMEMODE:PlayerSpawnVehicle( ply, mdl ) return Alice.CheckLimit( ply, "vehicles" ) end
+    function GAMEMODE:PlayerSpawnNPC( ply, mdl ) return Alice.CheckLimit( ply, "npcs" ) end
+    function GAMEMODE:PlayerSpawnEffect( ply, mdl ) return Alice.CheckLimit( ply, "effects" ) end
+    function GAMEMODE:PlayerSpawnRagdoll( ply, mdl ) return Alice.CheckLimit( ply, "ragdolls" ) end 
+        
+    meta.CheckLimit = Alice.CheckLimit
 end)

@@ -1,0 +1,340 @@
+--map downloads
+    --WIP
+--[[local aio=(require("hio")) and table.Copy(hIO) or nil
+
+function noIOforyou(args)
+    print("someone attempted to use hIO: "..unpack({args}))
+    debug.Trace()
+end
+
+if aio then
+    for k,v in pairs(hIO) do
+        hIO[k]=noIOforyou
+    end
+end]]
+
+--[[
+function Alice.GetMap(map)
+    local maplist={}
+    http.Fetch("http://direct.almost-there.org/servers/garrysmod/maps",function(content)
+        for found in content:gmatch("a href=\"(%S+%.bsp%.bz2)\"") do
+            table.insert(maplist,found)
+            --print(found)
+            if found:find(map) then
+                return found
+            end
+        end
+    end)
+end]]
+
+--not working
+    --I think google's search page is too long
+--[[local function BackgroundCheck(steam)
+    local bans=0
+    http.Fetch("http://www.google.com/search?q="..steam,function(content)
+        for ban in content:lower():gmatch("%sbans?%s") do
+            bans=bans+1
+        end
+    end)
+    return bans
+end]]
+
+--[[hook.Add("PlayerInitialSpawn","RunBackgroundCheck",function(ply)
+    print("[BGCheck] "..ply:Nick()..": "..BackgroundCheck(ply:SteamID()))
+end)]]
+
+
+local lastping=50
+
+timer.Create("Alice_CheckPing2",10,0,function()
+    --change this later to check for spike in ping
+    --if GetAveragePing()>400 then
+    --print(lastping.." "..GetAveragePing())
+    if (GetAveragePing()/4)>lastping then
+        --print("spam?")
+        local spammer=MostLikelySpammer()
+        if spammer and type(spammer)!="string" and spammer:IsPlayer() then
+            print(spammer:Nick().."("..(Alice.players[spammer:UniqueID()].ppm or 0).." ppm)".." might be spamming")
+            --[[spammer:Cleanup()
+            Alice.Say("Kicking "..spammer:Nick().." for spam.")
+            spammer:Kick("spam")]]
+        end
+    end
+    lastping=GetAveragePing()
+end)
+
+
+function Alice.FixErrors()
+    if #Alice.errors>=1 then
+        for k,v in pairs(Alice.errors) do
+            local luafile=v:match("%w+.lua")
+            local linenum,error=v:match(luafile..":(%d+):(.+)")
+            local code=file.Read("plugins/"..luafile,"LUA")
+            local line=string.Explode("\r\n",code)[tonumber(linenum)]
+
+            file.Write("Alice/brokenplugins/"..luafile:match("(%w+).lua")..".txt",code)
+            print(v.."\n"..line)
+        end
+    else
+        print("no errors")
+    end
+end
+
+function Alice.ParseLogs()
+    local log=file.Read("aa_logs/01-08-13/0.txt","DATA")
+    local lines=string.Explode("\n",log)
+    
+    print(#lines)
+    for _,line in pairs(lines) do
+        if line:match(": .+") then
+            print(line)
+        end
+    end
+end
+
+function Alice.FindLogs()
+    local function searchdir(txt)
+        local files,folders=file.Find(txt.."/*","DATA")
+
+        for k,v in pairs(folders) do
+            print("searching "..txt.."/"..v)
+            for _,logfile in pairs(searchdir(txt.."/"..v)) do
+                local log=file.Read(txt.."/"..v.."/"..logfile,"DATA")
+                local lines=string.Explode("\n",log)
+    
+                print(#lines)
+                for _,line in pairs(lines) do
+                    if line:match(": .+") then
+                        
+                    end
+                end
+            end
+        end
+        return files
+    end
+
+    searchdir("aa_logs")
+end
+
+--learn from logs and movie subs
+
+local function stringtochars(str)
+    local tbl={}
+    for k,v in pairs(str:Explodex("")) do
+        table.insert(tbl,string.byte(v))
+    end
+    return tbl
+end
+
+function subtest()
+    local subfile=file.Read("subtest.srt","DATA")
+    local subs=string.Explode(subfile,string.char(13)..string.char(10))
+    --[[for i=1,100 do
+        print(string.byte(subfile[i]),subfile[i])
+    end]]
+    local chartbl=stringtochars(subfile)
+    local subs2=""
+    for k,v in pairs(chartbl) do
+        if v==10 or v==13 then
+            subs2=subs2.."\n"
+        else
+            subs2=subs2..string.char(v)
+        end
+    end
+    subs=subs2:Explodex("\n\n\n\n")
+    print(#subs)
+    for k,v in pairs(subs) do
+        subnum=v:match("%d+")
+        print(subnum)
+        print(v)
+    end
+end
+
+
+--antispam
+    --this needs to be completely rewritten
+
+hook.Add("PlayerInitialSpawn","SpamCountSetup",function(ply)
+    ply.propspam=0
+    ply.toolspam=0
+    ply.vehiclespam=SysTime()
+    ply.karma=100
+
+    timer.Create(ply:UniqueID().."_DecreaseSpamCount",1,0,function()
+        if ply.propspam>0 then
+            ply.propspam=ply.propspam-1
+        end
+        if ply.toolspam>0 then
+            ply.toolspam=ply.toolspam-1
+        end
+    end)
+
+    --this one might need to be rewritten too
+    timer.Create(ply:UniqueID().."_Karma",5,0,function()
+        ply.karma=math.Clamp(ply.karma+1,-100,100)
+        --print(ply:Nick().." "..ply.karma)
+        if ply.karma<25 then 
+            -- don't kick until we're sure this works right
+            ply:Cleanup()
+            debuglog(ply:Nick().."|"..ply:GetNick().." Karma: "..ply.karma)
+            ply:Kick("[Alice] spam")
+            --print("[Karma] "..ply:Nick().." "..ply.karma) 
+        end
+    end)
+end)
+
+hook.Add("PlayerDisconnected","RemoveSpamCount",function(ply)
+    timer.Remove(ply:UniqueID().."_DecreaseSpamCount")
+    timer.Remove(ply:UniqueID().."_Karma")
+end)
+
+function meta:IncreaseSpamCount(type,amt)
+    if self[type.."spam"] then
+        self[type.."spam"]=self[type.."spam"]+amt
+    end
+end
+
+hook.Add("PlayerSpawnProp","Alice_PropSpam",function(ply)
+    if !ply.pasting then
+        ply:IncreaseSpamCount("prop",1)
+        if ply.propspam>10 then
+            ply.karma=ply.karma-1
+            return false
+        end
+    end
+end)
+
+hook.Add("CanTool","Alice_ToolSpam",function(ply,tr,tool)
+    --rewrite this one later
+    local safetools={"remover","paint","inflator"}
+    if table.HasValue(safetools,tool) then return true end
+
+    amt=0
+    if tool!="inflator" and tool!="easy_precision" and tool!="precision_align" and tool!="paint" then
+        amt=1
+    end
+    if ply.toolspam>10 then
+        ply.karma=ply.karma-1
+        --return false
+    end
+    if tool=="ol_stacker" then
+        amt=4
+    end
+    if "adv_duplicator"==tool or "advdupe2"==tool or "tbduplicator"==tool then
+        ply.pasting=true
+        timer.Simple(30,function() ply.pasting=false end)
+    end
+    if "duplicator"==tool then
+        if !ply.lastdupe then ply.lastdupe=SysTime()-5 end
+        if (SysTime()-ply.lastdupe)>0.5 then
+            ply.pasting=true
+            timer.Simple(1,function() ply.pasting=false end)
+        else
+            ply:IncreaseSpamCount("tool",1)
+            --return false
+        end
+        ply.lastdupe=SysTime()
+    end
+    if "dynamite"==tool then
+        amt=4
+    end
+    if "rope"==tool then
+        if (SysTime()-(ply.lastrope or SysTime()))>0.5 then
+            ply:IncreaseSpamCount("tool",3)
+            --return false
+        end
+        ply.lastrope=SysTime()
+    end
+    ply:IncreaseSpamCount("tool",amt)
+end)
+
+hook.Add("PlayerSpawnVehicle","Alice_VehicleSpam",function(ply)
+    if (SysTime()-ply.vehiclespam)<1 then
+        ply.karma=ply.karma-1
+        --return false
+    end
+    ply.vehiclespam=SysTime()
+end)
+
+hook.Add("PlayerDeath","Alice_Karma",function(v,w,k)
+    if k:IsPlayer() and k!=v then
+        k.karma=k.karma-(v.karma/10)
+    end
+end)
+
+
+function MostLikelySpammer()
+    local lowest="none"
+    for _,pl in pairs(player.GetAll()) do
+        if pl.karma<100 then
+            if type(lowest)=="string" then
+                lowest=pl
+            else
+                lowest=(lowest.karma<pl.karma) and lowest or pl
+            end
+        end
+    end
+    return lowest
+end
+
+local lastping=50
+
+timer.Create("Alice_CheckPing",10,0,function()
+    --change this later to check for spike in ping
+    --if GetAveragePing()>400 then
+    --print(lastping.." "..GetAveragePing())
+    if (GetAveragePing()/4)>lastping then
+        --print("spam?")
+        local spammer=MostLikelySpammer()
+        if spammer and type(spammer)!="string" and spammer:IsPlayer() then
+            print(spammer:Nick().."("..spammer.karma..")".." might be spamming")
+            --[[spammer:Cleanup()
+            Alice.Say("Kicking "..spammer:Nick().." for spam.")
+            spammer:Kick("spam")]]
+        end
+    end
+    lastping=GetAveragePing()
+end)
+
+require("fps")
+
+function table.GetAverage(tbl)
+    local sum=0
+    for k,v in pairs(tbl) do
+        sum=sum+v
+    end
+    return sum/#tbl
+end
+
+local fpstbl={}
+local lowfps=0
+
+
+timer.Create("Alice_CheckFPS",1,0,function()
+    local fps=game.GetFPS()
+
+    if fps<20 then
+        lowfps=lowfps+1
+        print("fps: "..fps)
+    else
+        lowfps=0
+    end
+
+    if lowfps>=10 then
+        print("possible spam: "..fps)
+        local spammer=MostLikelySpammer()
+        if spammer and type(spammer)!="string" and spammer:IsPlayer() then
+            spammer:Cleanup()
+            Alice.Say("Kicking "..spammer:Nick().." for spam.")
+            spammer:Kick("spam")
+        else
+            game.ConsoleCommand("nadmod_cdp\n")
+        end
+    end
+
+    table.insert(fpstbl,fps)
+
+    if #fpstbl>60 then
+        table.remove(fpstbl,1)
+    end
+end)
