@@ -29,69 +29,6 @@ hook.Add("PlayerShouldTakeDamage","SuicideCrowbar",function(victim,attacker)
 end)
 
 
---hacky fastdl replacement
-
-local urls={}
-    
-urls["http://www.tangoservers.com/fastdl/garrysmod/"]={}
-urls["http://heavy.noxiousnet.com/downloadurl/"]={}
-urls["http://pluxel.co.uk/fastdl/"]={}
-urls["http://gfs.site.nfoservers.com/server/"]={}
-urls["http://tdmcarsford.site.nfoservers.com/server/"]={}
-urls["http://kroppweb.site.nfoservers.com/server/"]={}
-
-Alice.fastdl=Alice.LoadTable("fastdl") or urls
-
-hook.Add("InitPostEntity","SetFastDL",function()
-    local map=game.GetMap()
-
-    local notfound=true
-
-    game.ConsoleCommand("sv_downloadurl \"\"\n")
-    if map=="gm_flatgrass" or map =="gm_construct" then return end
-
-    print("setting fastdl url")
-    for k,v in pairs(Alice.fastdl) do
-        --check if we've already found the map
-        for _,m in pairs(v) do
-            if m==map then
-                print("setting fastdl to "..k)
-                notfound=false
-                game.ConsoleCommand("sv_downloadurl \""..k.."\"\n")
-                return
-            end
-        end
-    end
-
-    --map wasn't found. search each url for it.
-    for k,v in pairs(Alice.fastdl) do
-        if notfound then
-            http.Fetch(k.."maps",function(content)
-                if notfound then
-                print("searching "..k.."maps for "..map)
-                    if content:match("a href=\"("..map.."%.bsp)\"") or content:match("a href=\"("..map.."%.bsp%.bz2)\"") then
-                        table.insert(Alice.fastdl[k],map)
-                        Alice.SaveTable(Alice.fastdl,"fastdl")
-                        print("setting fastdl to "..k)
-                        notfound=false
-                        game.ConsoleCommand("sv_downloadurl \""..k.."\"\n")
-                        return
-                    end
-                end
-            end,
-            function(code)
-                print(code)
-                if code==404 then
-                    print("removing "..k)
-                    Alice.fastdl[k]=nil
-                    Alice.SaveTable(Alice.fastdl,"fastdl")
-                end
-            end)
-        end
-    end
-    --print("no fastdl url found")
-    --game.ConsoleCommand("changelevel gm_flatgrass\n")
-end)
 
 hook.Add("CheckPassword","passtest",function(steam,ip,pass)
     print(pass)
